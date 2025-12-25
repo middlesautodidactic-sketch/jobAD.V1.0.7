@@ -405,14 +405,6 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const $ = id => document.getElementById(id);
 
-let debugMode = false;
-
-$("toggleDebug").onclick = () => {
-  debugMode = !debugMode;
-  $("workerDebug").style.display = debugMode ? "block" : "none";
-  $("assignerDebug").style.display = debugMode ? "block" : "none";
-  if (debugMode) loadWorkerAssignerFromUsers();
-};
 
 /* ---------------- Date Utils ---------------- */
 function formatDateThai(dateStr) {
