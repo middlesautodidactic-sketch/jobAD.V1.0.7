@@ -1449,48 +1449,60 @@ document.querySelector('input[value="ตรวจเช็ค/ซ่อม"]')?.
   if (e.target.checked) goToReportPage("seereport3.html");
 });
 
-// ✅ ฟังก์ชันพิมพ์งาน - ส่ง position ไปด้วย
+// ✅ ฟังก์ชันพิมพ์งาน - แก้ไขให้ทำงานบน iOS
 window.printEvent = async (id) => {
-  const eventRef = ref(db, `events/${id}`);
-  const snapshot = await get(eventRef);
-
-  if (!snapshot.exists()) {
-    alert("ไม่พบข้อมูลงาน");
-    return;
-  }
-
-  const data = snapshot.val();
-  const jobNumber = data.jobNumber || "ไม่ระบุ";
+  // เปิดหน้าต่างใหม่ทันทีก่อนทำ async operation (สำคัญสำหรับ iOS)
+  const newWindow = window.open('', '_blank');
   
-  let position = "";
-  
-  if (data.assignerPositions && data.assignerPositions.length > 0) {
-    position = data.assignerPositions[0];
-  } else if (data.position) {
-    position = data.position;
-  } else {
-    position = sessionStorage.getItem("assignedByPosition") || "";
+  try {
+    const eventRef = ref(db, `events/${id}`);
+    const snapshot = await get(eventRef);
+
+    if (!snapshot.exists()) {
+      newWindow.close();
+      alert("ไม่พบข้อมูลงาน");
+      return;
+    }
+
+    const data = snapshot.val();
+    const jobNumber = data.jobNumber || "ไม่ระบุ";
+    
+    let position = "";
+    
+    if (data.assignerPositions && data.assignerPositions.length > 0) {
+      position = data.assignerPositions[0];
+    } else if (data.position) {
+      position = data.position;
+    } else {
+      position = sessionStorage.getItem("assignedByPosition") || "";
+    }
+
+    console.log("🔍 Debug printEvent:", {
+      jobNumber,
+      position,
+      assignerPositions: data.assignerPositions,
+      allData: data
+    });
+
+    const url = new URL("report.html", window.location.href);
+    url.searchParams.set("job", jobNumber);
+    
+    // ✅ ส่งตำแหน่งไปด้วยเสมอ
+    if (position) {
+      url.searchParams.set("position", position);
+    } else {
+      console.warn("⚠️ ไม่พบข้อมูล position สำหรับงาน:", jobNumber);
+    }
+
+    console.log("🖨 เปิดหน้าพิมพ์:", url.toString());
+    
+    // นำทางไปยัง URL ที่สร้างไว้
+    newWindow.location = url.toString();
+  } catch (error) {
+    console.error("Error opening print page:", error);
+    if (newWindow) newWindow.close();
+    alert("เกิดข้อผิดพลาดในการเปิดหน้าพิมพ์");
   }
-
-  console.log("🔍 Debug printEvent:", {
-    jobNumber,
-    position,
-    assignerPositions: data.assignerPositions,
-    allData: data
-  });
-
-  const url = new URL("report.html", window.location.href);
-  url.searchParams.set("job", jobNumber);
-  
-  // ✅ ส่งตำแหน่งไปด้วยเสมอ
-  if (position) {
-    url.searchParams.set("position", position);
-  } else {
-    console.warn("⚠️ ไม่พบข้อมูล position สำหรับงาน:", jobNumber);
-  }
-
-  console.log("🖨 เปิดหน้าพิมพ์:", url.toString());
-  window.open(url, "_blank");
 };
 
 </script>
